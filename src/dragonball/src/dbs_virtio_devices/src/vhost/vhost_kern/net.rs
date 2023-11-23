@@ -31,14 +31,14 @@ use virtio_bindings::bindings::virtio_ring::*;
 use virtio_queue::{Descriptor, DescriptorChain, QueueT};
 use vm_memory::{Address, Bytes, GuestMemory, GuestMemoryRegion, MemoryRegionAddress};
 
-use crate::net::{vnet_hdr_len, NetDeviceMetrics};
 #[cfg(test)]
 use crate::vhost::vhost_kern::test_utils::{
     MockVhostBackend as VhostBackend, MockVhostNet as VhostNet,
 };
 use crate::{
-    ActivateError, ConfigResult, DbsGuestAddressSpace, Error as VirtioError,
-    Result as VirtioResult, TapError, VirtioDevice, VirtioDeviceConfig, VirtioDeviceInfo, TYPE_NET,
+    vnet_hdr_len, ActivateError, ConfigResult, DbsGuestAddressSpace, Error as VirtioError,
+    NetDeviceMetrics, Result as VirtioResult, TapError, VirtioDevice, VirtioDeviceConfig,
+    VirtioDeviceInfo, TYPE_NET,
 };
 
 const NET_DRIVER_NAME: &str = "vhost-net";
@@ -290,7 +290,7 @@ where
                 "{}: Invalid virtio queue pairs, expected a value greater than 0, but got {}",
                 NET_DRIVER_NAME, self.vq_pairs
             );
-            return Err(VirtioError::ActivateError(ActivateError::InvalidParam));
+            return Err(VirtioError::ActivateError(Box::new(ActivateError::InvalidParam)));
         }
 
         if self.handles.len() != self.vq_pairs || self.taps.len() != self.vq_pairs {
@@ -299,7 +299,7 @@ where
                 self.handles.len(),
                 self.taps.len(),
                 self.vq_pairs);
-            return Err(VirtioError::ActivateError(ActivateError::InternalError));
+            return Err(VirtioError::ActivateError(Box::new(ActivateError::InternalError)));
         }
 
         for idx in 0..self.vq_pairs {
